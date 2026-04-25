@@ -13,40 +13,60 @@ body {
     height: 100vh;
     font-family: Arial, sans-serif;
 }
+
+/* Viewer */
 .viewer {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: hidden;
 }
+
+/* FIX: proper scaling for both laptop + mobile */
 img {
     max-width: 95vw;
-    max-height: 92vh;
+    max-height: calc(100vh - 90px);
+    width: auto;
+    height: auto;
     object-fit: contain;
-    border-radius: 10px;
 }
+
+/* Controls */
 .controls {
-    height: 50px;
+    height: 90px;
     display: flex;
-    justify-content: center;
+    justify-content: space-around;
     align-items: center;
-    gap: 12px;
-    background: rgba(245,230,200,0.95);
+    background: rgba(245,230,200,0.98);
+    border-top: 1px solid #ccc;
 }
+
 button {
-    padding: 6px 14px;
+    padding: 16px 22px;
     font-weight: bold;
-    font-size: 14px;
-    border-radius: 6px;
+    font-size: 18px;
+    border-radius: 12px;
     border: none;
     cursor: pointer;
+}
+
+/* Mobile boost */
+@media (max-width: 480px) {
+    .controls {
+        height: 100px;
+    }
+    button {
+        font-size: 22px;
+        padding: 18px 24px;
+    }
 }
 </style>
 </head>
 
 <body>
 
-<div class="viewer">
+<div class="viewer" id="viewer">
     <img id="page" src="page0.png">
 </div>
 
@@ -66,10 +86,7 @@ let started = false;
 
 function showPage() {
     document.getElementById("page").src = "page" + currentPage + ".png";
-
-    if (started && currentPage >= 3) {
-        playAudio();
-    }
+    if (started && currentPage >= 3) playAudio();
 }
 
 function nextPage() {
@@ -106,23 +123,40 @@ function playAudio() {
 
     if (pageNum >= 1) {
         voice.src = "audio/page" + pageNum + ".mp3";
-        voice.load();
+        voice.volume = 1.0;
         voice.play().catch(()=>{});
     }
 
     let musicFile = "audio/soft.mp3";
-    let volumeLevel = 0.08;
+    let volumeLevel = 0.02;
 
     if (pageNum >= 19 && pageNum <= 22) {
         musicFile = "audio/wedding" + pageNum + ".mp3";
-        volumeLevel = 0.15;
+        volumeLevel = 0.04;
     }
 
     music.src = musicFile;
     music.volume = volumeLevel;
-    music.load();
     music.play().catch(()=>{});
 }
+
+/* Ducking */
+voice.addEventListener("play", () => music.volume = 0.01);
+voice.addEventListener("ended", () => music.volume = 0.02);
+
+/* Swipe */
+let startX = 0;
+let endX = 0;
+
+viewer.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+});
+
+viewer.addEventListener("touchend", e => {
+    endX = e.changedTouches[0].clientX;
+    if (startX - endX > 50) nextPage();
+    if (endX - startX > 50) prevPage();
+});
 </script>
 
 </body>
