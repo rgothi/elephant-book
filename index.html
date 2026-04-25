@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Elephant Book</title>
+
+<style>
+body {
+    margin: 0;
+    background: #f5e6c8;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+}
+.viewer {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+img {
+    max-width: 95vw;
+    max-height: 92vh;
+    object-fit: contain;
+    border-radius: 10px;
+}
+.controls {
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    background: rgba(245,230,200,0.95);
+}
+button {
+    padding: 6px 14px;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="viewer">
+    <img id="page" src="page0.png">
+</div>
+
+<div class="controls">
+    <button onclick="prevPage()">PREVIOUS</button>
+    <button onclick="nextPage()">NEXT</button>
+    <button onclick="stopAudio()">STOP</button>
+</div>
+
+<audio id="voice"></audio>
+<audio id="music" loop></audio>
+
+<script>
+let currentPage = 0;
+const totalPages = 26;
+let started = false;
+
+function showPage() {
+    document.getElementById("page").src = "page" + currentPage + ".png";
+
+    if (started && currentPage >= 3) {
+        playAudio();
+    }
+}
+
+function nextPage() {
+    started = true;
+    if (currentPage < totalPages - 1) {
+        stopAudio();
+        currentPage++;
+        showPage();
+    }
+}
+
+function prevPage() {
+    if (currentPage > 0) {
+        stopAudio();
+        currentPage--;
+        showPage();
+    }
+}
+
+function stopAudio() {
+    let v = document.getElementById("voice");
+    let m = document.getElementById("music");
+    v.pause(); v.currentTime = 0;
+    m.pause(); m.currentTime = 0;
+}
+
+function playAudio() {
+    let voice = document.getElementById("voice");
+    let music = document.getElementById("music");
+
+    stopAudio();
+
+    let pageNum = currentPage - 2;
+
+    if (pageNum >= 1) {
+        voice.src = "audio/page" + pageNum + ".mp3";
+        voice.load();
+        voice.play().catch(()=>{});
+    }
+
+    let musicFile = "audio/soft.mp3";
+    let volumeLevel = 0.08;
+
+    if (pageNum >= 19 && pageNum <= 22) {
+        musicFile = "audio/wedding" + pageNum + ".mp3";
+        volumeLevel = 0.15;
+    }
+
+    music.src = musicFile;
+    music.volume = volumeLevel;
+    music.load();
+    music.play().catch(()=>{});
+}
+</script>
+
+</body>
+</html>
