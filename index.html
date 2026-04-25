@@ -13,8 +13,6 @@ body {
     height: 100vh;
     font-family: Arial, sans-serif;
 }
-
-/* Viewer */
 .viewer {
     flex: 1;
     display: flex;
@@ -22,44 +20,24 @@ body {
     align-items: center;
     overflow: hidden;
 }
-
-/* FIX: proper scaling for both laptop + mobile */
 img {
     max-width: 95vw;
     max-height: calc(100vh - 90px);
-    width: auto;
-    height: auto;
     object-fit: contain;
 }
-
-/* Controls */
 .controls {
     height: 90px;
     display: flex;
     justify-content: space-around;
     align-items: center;
     background: rgba(245,230,200,0.98);
-    border-top: 1px solid #ccc;
 }
-
 button {
     padding: 16px 22px;
     font-weight: bold;
     font-size: 18px;
     border-radius: 12px;
     border: none;
-    cursor: pointer;
-}
-
-/* Mobile boost */
-@media (max-width: 480px) {
-    .controls {
-        height: 100px;
-    }
-    button {
-        font-size: 22px;
-        padding: 18px 24px;
-    }
 }
 </style>
 </head>
@@ -83,6 +61,11 @@ button {
 let currentPage = 0;
 const totalPages = 26;
 let started = false;
+let currentMusicBase = 0.04;
+
+function isMobile() {
+    return window.innerWidth <= 768;
+}
 
 function showPage() {
     document.getElementById("page").src = "page" + currentPage + ".png";
@@ -107,16 +90,11 @@ function prevPage() {
 }
 
 function stopAudio() {
-    let v = document.getElementById("voice");
-    let m = document.getElementById("music");
-    v.pause(); v.currentTime = 0;
-    m.pause(); m.currentTime = 0;
+    voice.pause(); voice.currentTime = 0;
+    music.pause(); music.currentTime = 0;
 }
 
 function playAudio() {
-    let voice = document.getElementById("voice");
-    let music = document.getElementById("music");
-
     stopAudio();
 
     let pageNum = currentPage - 2;
@@ -128,32 +106,34 @@ function playAudio() {
     }
 
     let musicFile = "audio/soft.mp3";
-    let volumeLevel = 0.02;
 
+    // 🎯 IMPROVED BALANCE
     if (pageNum >= 19 && pageNum <= 22) {
+        currentMusicBase = isMobile() ? 0.07 : 0.10;  // 🔥 increased clearly
         musicFile = "audio/wedding" + pageNum + ".mp3";
-        volumeLevel = 0.04;
+    } else {
+        currentMusicBase = isMobile() ? 0.03 : 0.05;
     }
 
     music.src = musicFile;
-    music.volume = volumeLevel;
+    music.volume = currentMusicBase;
     music.play().catch(()=>{});
 }
 
-/* Ducking */
-voice.addEventListener("play", () => music.volume = 0.01);
-voice.addEventListener("ended", () => music.volume = 0.02);
-
-/* Swipe */
-let startX = 0;
-let endX = 0;
-
-viewer.addEventListener("touchstart", e => {
-    startX = e.touches[0].clientX;
+// 🔊 controlled ducking (not killing wedding music)
+voice.addEventListener("play", () => {
+    music.volume = currentMusicBase * 0.6;
 });
 
+voice.addEventListener("ended", () => {
+    music.volume = currentMusicBase;
+});
+
+// swipe
+let startX = 0;
+viewer.addEventListener("touchstart", e => startX = e.touches[0].clientX);
 viewer.addEventListener("touchend", e => {
-    endX = e.changedTouches[0].clientX;
+    let endX = e.changedTouches[0].clientX;
     if (startX - endX > 50) nextPage();
     if (endX - startX > 50) prevPage();
 });
