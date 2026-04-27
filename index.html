@@ -44,7 +44,6 @@ button {
     button { font-size: 22px; padding: 18px 24px; }
 }
 </style>
-
 </head>
 
 <body>
@@ -69,7 +68,7 @@ let started = false;
 let baseMusic = 0.02;
 
 function isMobile() {
-    return window.innerWidth <= 768;
+    return /iPhone|iPad|Android/i.test(navigator.userAgent);
 }
 
 function showPage() {
@@ -113,10 +112,10 @@ function playAudio() {
     let musicFile = "audio/soft.mp3";
 
     if (pageNum >= 19 && pageNum <= 22) {
-        baseMusic = isMobile() ? 0.025 : 0.08;  // reduced slightly
+        baseMusic = isMobile() ? 0.02 : 0.08;
         musicFile = "audio/wedding" + pageNum + ".mp3";
     } else {
-        baseMusic = isMobile() ? 0.012 : 0.045; // reduced slightly
+        baseMusic = isMobile() ? 0.01 : 0.045;
     }
 
     music.src = musicFile;
@@ -124,13 +123,19 @@ function playAudio() {
     music.play().catch(()=>{});
 }
 
-voice.addEventListener("play", () => {
-    music.volume = baseMusic * 0.25; // stronger ducking
-});
+voice.onplay = function() {
+    music.volume = baseMusic * 0.2;
+};
 
-voice.addEventListener("ended", () => {
+voice.onended = function() {
     music.volume = baseMusic;
-});
+};
+
+voice.ontimeupdate = function() {
+    if (!voice.paused) {
+        music.volume = baseMusic * 0.2;
+    }
+};
 
 let startX = 0;
 viewer.addEventListener("touchstart", e => startX = e.touches[0].clientX);
