@@ -39,10 +39,6 @@ button {
     border-radius: 12px;
     border: none;
 }
-@media (max-width: 480px) {
-    .controls { height: 100px; }
-    button { font-size: 22px; padding: 18px 24px; }
-}
 </style>
 </head>
 
@@ -65,7 +61,8 @@ button {
 let currentPage = 0;
 const totalPages = 26;
 let started = false;
-let baseMusic = 0.02;
+let baseMusic = 0.015;
+let duckingInterval = null;
 
 function isMobile() {
     return /iPhone|iPad|Android/i.test(navigator.userAgent);
@@ -96,6 +93,7 @@ function prevPage() {
 function stopAudio() {
     voice.pause(); voice.currentTime = 0;
     music.pause(); music.currentTime = 0;
+    clearInterval(duckingInterval);
 }
 
 function playAudio() {
@@ -115,27 +113,21 @@ function playAudio() {
         baseMusic = isMobile() ? 0.02 : 0.08;
         musicFile = "audio/wedding" + pageNum + ".mp3";
     } else {
-        baseMusic = isMobile() ? 0.01 : 0.045;
+        baseMusic = isMobile() ? 0.012 : 0.045;
     }
 
     music.src = musicFile;
     music.volume = baseMusic;
     music.play().catch(()=>{});
+
+    duckingInterval = setInterval(() => {
+        if (!voice.paused) {
+            music.volume = baseMusic * 0.15;
+        } else {
+            music.volume = baseMusic;
+        }
+    }, 200);
 }
-
-voice.onplay = function() {
-    music.volume = baseMusic * 0.2;
-};
-
-voice.onended = function() {
-    music.volume = baseMusic;
-};
-
-voice.ontimeupdate = function() {
-    if (!voice.paused) {
-        music.volume = baseMusic * 0.2;
-    }
-};
 
 let startX = 0;
 viewer.addEventListener("touchstart", e => startX = e.touches[0].clientX);
@@ -147,4 +139,4 @@ viewer.addEventListener("touchend", e => {
 </script>
 
 </body>
-</html>
+</html
