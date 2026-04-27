@@ -1,1 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Elephant Book</title>
+
+<style>
+body {
+    margin: 0;
+    background: #f5e6c8;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+}
+.viewer {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+img {
+    max-width: 95vw;
+    max-height: calc(100vh - 90px);
+    object-fit: contain;
+}
+.controls {
+    height: 90px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: rgba(245,230,200,0.98);
+}
+button {
+    padding: 16px 22px;
+    font-weight: bold;
+    font-size: 18px;
+    border-radius: 12px;
+    border: none;
+}
+@media (max-width: 480px) {
+    .controls { height: 100px; }
+    button { font-size: 22px; padding: 18px 24px; }
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="viewer" id="viewer">
+    <img id="page" src="page0.png">
+</div>
+
+<div class="controls">
+    <button onclick="prevPage()">PREVIOUS</button>
+    <button onclick="nextPage()">NEXT</button>
+    <button onclick="stopAudio()">STOP</button>
+</div>
+
+<audio id="voice"></audio>
+<audio id="music" loop></audio>
+
+<script>
+let currentPage = 0;
+const totalPages = 26;
+let started = false;
+let baseMusic = 0.02;
+
+function isMobile() {
+    return window.innerWidth <= 768;
+}
+
+function showPage() {
+    document.getElementById("page").src = "page" + currentPage + ".png";
+    if (started && currentPage >= 3) playAudio();
+}
+
+function nextPage() {
+    started = true;
+    if (currentPage < totalPages - 1) {
+        stopAudio();
+        currentPage++;
+        showPage();
+    }
+}
+
+function prevPage() {
+    if (currentPage > 0) {
+        stopAudio();
+        currentPage--;
+        showPage();
+    }
+}
+
+function stopAudio() {
+    voice.pause(); voice.currentTime = 0;
+    music.pause(); music.currentTime = 0;
+}
+
+function playAudio() {
+    stopAudio();
+
+    let pageNum = currentPage - 2;
+
+    if (pageNum >= 1) {
+        voice.src = "audio/page" + pageNum + ".mp3";
+        voice.volume = 1.0;
+        voice.play().catch(()=>{});
+    }
+
+    let musicFile = "audio/soft.mp3";
+
+    if (pageNum >= 19 && pageNum <= 22) {
+        baseMusic = isMobile() ? 0.025 : 0.08;  // reduced slightly
+        musicFile = "audio/wedding" + pageNum + ".mp3";
+    } else {
+        baseMusic = isMobile() ? 0.012 : 0.045; // reduced slightly
+    }
+
+    music.src = musicFile;
+    music.volume = baseMusic;
+    music.play().catch(()=>{});
+}
+
+voice.addEventListener("play", () => {
+    music.volume = baseMusic * 0.25; // stronger ducking
+});
+
+voice.addEventListener("ended", () => {
+    music.volume = baseMusic;
+});
+
+let startX = 0;
+viewer.addEventListener("touchstart", e => startX = e.touches[0].clientX);
+viewer.addEventListener("touchend", e => {
+    let endX = e.changedTouches[0].clientX;
+    if (startX - endX > 50) nextPage();
+    if (endX - startX > 50) prevPage();
+});
+</script>
+
+</body>
+</html>
 
