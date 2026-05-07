@@ -1,144 +1,188 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Elephant Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elephant Ant Wedding Cartoon</title>
 
 <style>
-body {
+body{
     margin:0;
-    background:#f5e6c8;
-    display:flex;
-    flex-direction:column;
-    height:100vh;
-    font-family:Arial;
-}
-.viewer{
-    flex:1;
+    background:black;
+    color:white;
+    font-family:Arial,sans-serif;
+    overflow:hidden;
     display:flex;
     justify-content:center;
     align-items:center;
+    height:100vh;
+}
+.container{
+    width:100%;
+    text-align:center;
 }
 img{
-    max-width:95vw;
-    max-height:calc(100vh - 90px);
+    max-width:100vw;
+    max-height:80vh;
     object-fit:contain;
+    border-radius:12px;
 }
 .controls{
-    height:90px;
+    margin-top:10px;
     display:flex;
-    justify-content:space-around;
-    align-items:center;
-    background:#f5e6c8;
+    justify-content:center;
+    gap:12px;
+    flex-wrap:wrap;
 }
 button{
-    padding:16px 22px;
+    background:#f5a623;
+    color:white;
+    border:none;
+    padding:14px 22px;
+    border-radius:12px;
     font-size:18px;
-    border-radius:10px;
+    font-weight:bold;
+    cursor:pointer;
+}
+#pageText{
+    margin-top:8px;
+    font-size:20px;
+}
+
+@media (max-width:768px){
+    button{
+        font-size:20px;
+        padding:16px 20px;
+        min-width:120px;
+    }
 }
 </style>
 </head>
 
 <body>
 
-<div class="viewer">
-<img id="page" src="page0.png">
+<div class="container">
+    <img id="pageImage" src="page0.png">
+    <div id="pageText">Cover Page</div>
+
+    <div class="controls">
+        <button onclick="prevPage()">⬅ Previous</button>
+        <button onclick="toggleAudio()">▶ Play / Pause</button>
+        <button onclick="nextPage()">Next ➡</button>
+        <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
+    </div>
 </div>
 
-<div class="controls">
-<button onclick="prevPage()">PREVIOUS</button>
-<button onclick="nextPage()">NEXT</button>
-<button onclick="stopAll()">STOP</button>
-</div>
-
-<audio id="voice"></audio>
-<audio id="music" loop></audio>
+<audio id="audio"></audio>
 
 <script>
 
-let currentPage=0;
-const totalPages=26;
-let started=false;
+let currentPage = 0;
 
-function showPage(){
-document.getElementById("page").src="page"+currentPage+".png";
-if(started && currentPage>=3) playAudio();
+// total image pages INCLUDING intro pages
+const maxImagePage = 26;
+
+const image = document.getElementById("pageImage");
+const audio = document.getElementById("audio");
+const pageText = document.getElementById("pageText");
+
+function updatePage(){
+
+    image.src = `page${currentPage}.png`;
+
+    // Silent intro pages
+    if(currentPage === 0){
+        pageText.innerText = "Cover Page";
+        audio.pause();
+        audio.removeAttribute("src");
+    }
+    else if(currentPage === 1){
+        pageText.innerText = "Copyright Page";
+        audio.pause();
+        audio.removeAttribute("src");
+    }
+    else if(currentPage === 2){
+        pageText.innerText = "Preface";
+        audio.pause();
+        audio.removeAttribute("src");
+    }
+
+    // Story starts from page3.png using page1.mp3
+    else{
+
+        const storyPage = currentPage - 2;
+
+        pageText.innerText = `Page ${storyPage} / 25`;
+
+        audio.pause();
+        audio.src = `audio/page${storyPage}.mp3`;
+        audio.load();
+
+        audio.play().catch(()=>{});
+    }
 }
 
 function nextPage(){
-started=true;
-if(currentPage<totalPages-1){
-stopAll();
-currentPage++;
-showPage();
-}
+    if(currentPage < maxImagePage){
+        currentPage++;
+        updatePage();
+    }
 }
 
 function prevPage(){
-if(currentPage>0){
-stopAll();
-currentPage--;
-showPage();
-}
-}
-
-function stopAll(){
-voice.pause(); voice.currentTime=0;
-music.pause(); music.currentTime=0;
+    if(currentPage > 0){
+        currentPage--;
+        updatePage();
+    }
 }
 
-function playAudio(){
+function toggleAudio(){
 
-stopAll();
+    if(!audio.src) return;
 
-let pageNum=currentPage-2;
-
-// 🎯 FINAL RELIABLE SOLUTION: PAUSE MUSIC DURING NARRATION
-
-if(pageNum>=1){
-
-voice.src="audio/page"+pageNum+".mp3";
-voice.volume=1.0;
-voice.play().catch(()=>{});
-
-voice.onplay = () => {
-music.pause();
-};
-
-voice.onended = () => {
-startMusic(pageNum);
-};
-
-} else {
-startMusic(pageNum);
+    if(audio.paused){
+        audio.play();
+    }else{
+        audio.pause();
+    }
 }
 
+function toggleFullscreen(){
+
+    if(!document.fullscreenElement){
+        document.documentElement.requestFullscreen();
+    }else{
+        document.exitFullscreen();
+    }
 }
 
-function startMusic(pageNum){
+// Swipe support
 
-let musicFile="audio/soft.mp3";
-let volume=0.04;
+let startX = 0;
 
-if(pageNum>=19 && pageNum<=22){
-musicFile="audio/wedding"+pageNum+".mp3";
-volume=0.06;
-}
-
-music.src=musicFile;
-music.volume=volume;
-music.play().catch(()=>{});
-
-}
-
-// swipe
-let startX=0;
-document.querySelector(".viewer").addEventListener("touchstart",e=>startX=e.touches[0].clientX);
-document.querySelector(".viewer").addEventListener("touchend",e=>{
-let endX=e.changedTouches[0].clientX;
-if(startX-endX>50) nextPage();
-if(endX-startX>50) prevPage();
+window.addEventListener("touchstart", e=>{
+    startX = e.changedTouches[0].screenX;
 });
+
+window.addEventListener("touchend", e=>{
+
+    let endX = e.changedTouches[0].screenX;
+
+    if(endX - startX > 50){
+        prevPage();
+    }
+
+    if(startX - endX > 50){
+        nextPage();
+    }
+});
+
+// Auto next page after narration
+audio.addEventListener("ended", ()=>{
+    nextPage();
+});
+
+updatePage();
 
 </script>
 
